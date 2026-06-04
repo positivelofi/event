@@ -28,7 +28,8 @@ html,body{height:100%;background:#0a0a09}
 #state{position:absolute;top:24px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:0.28em;color:rgba(180,170,150,0.18);text-transform:lowercase;font-family:'DM Mono',monospace;transition:opacity 0.8s}
 #top-controls{position:absolute;top:22px;left:22px}
 #dot{position:absolute;top:22px;right:28px;width:4px;height:4px;border-radius:50%;background:rgba(180,170,150,0.2)}
-#rec-btn{width:6px;height:6px;border-radius:50%;background:rgba(180,170,150,0.18);cursor:pointer;transition:background 0.3s}
+#rec-btn{width:6px;height:6px;border-radius:50%;background:rgba(180,170,150,0.18);cursor:pointer;transition:background 0.3s;position:relative}
+#rec-btn::after{content:'';position:absolute;top:-14px;left:-14px;right:-14px;bottom:-14px}
 #rec-btn.recording{background:rgba(200,60,60,0.7);animation:pulse 1.2s ease-in-out infinite}
 /* Box post-export */
 #panel-btn{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);font-family:'DM Mono',monospace;font-size:14px;letter-spacing:0.1em;color:rgba(180,170,150,0.18);cursor:pointer;padding:8px 20px;transition:color 0.3s;user-select:none;-webkit-user-select:none}
@@ -550,23 +551,22 @@ function setRecMode(mode){
   document.getElementById('rec-btn').title=`● rec (${mode})`;
 }
 
+
 function quickRec(){
   const btn=document.getElementById('rec-btn');
   if(isRecording){
-    // Arrêt — fadeout 3.5s puis stop session + enregistrement
-    fadeOut();
+    // Arrêt enregistrement — le son continue si running
     btn.classList.remove('recording');
     btn.title=`● rec (${selectedRecMode})`;
-    setTimeout(()=>{
-      stopRecording();
-      running=false;
+    stopRecording();
+    if(!running){
       document.getElementById('hint').style.opacity='1';
       setState('silence');
-    }, 4500);
+    }
   } else {
-    // Lancement — éveiller le son si pas encore actif
+    // Lancer le son si pas encore actif
     if(!running){
-      initAudio();
+      if(!AC)initAudio();
       running=true;
       if(AC.state==='suspended')AC.resume();
       fadeIn();
@@ -586,12 +586,14 @@ function quickRec(){
         setTimeout(()=>{if(running)playEmilNote(safeFreq(curTonality.emil));},(3+Math.random()*2)*1000);
       });
     }
+    // Démarrer l'enregistrement
     recMode=selectedRecMode;
     startRecording(selectedRecMode);
     btn.classList.add('recording');
-    btn.title='arrêter';
+    btn.title='■ stop rec';
   }
 }
+
 // PCM 32-bit float, 44100Hz stéréo — universel DAW/QuickTime
 let wavRecorder=null;
 let wavBuffersL=[];
@@ -4188,6 +4190,9 @@ function fadeOut(){
 }
 
 document.getElementById('ev').addEventListener('click',()=>{
+  // Cacher le hint immédiatement au premier clic — ne pas attendre fetchSeed
+  const hintEl=document.getElementById('hint');
+  if(hintEl)hintEl.style.opacity='0';
   if(!AC)initAudio();
   // AC.resume() doit être synchrone dans le gestionnaire de clic — iOS exige ça
   if(AC&&AC.state==='suspended')AC.resume();
