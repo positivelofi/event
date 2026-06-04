@@ -6,6 +6,10 @@
 
 Version 1.0 — Yuwa / Positive Lofi · 2025–2026
 
+## Try it
+
+**[▶ Play Event in your browser](https://positivelofi.github.io/event/)**
+
 ---
 
 ## Quick Start
